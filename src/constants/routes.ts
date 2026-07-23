@@ -17,6 +17,12 @@ export const ROUTES = {
       detail: (id: string) => `/livreurs/${id}`,
       edit: (id: string) => `/livreurs/${id}/edit`,
     },
+    partenaires: {
+      list: "/partenaires",
+    },
+    livraisons: {
+      list: "/livraisons",
+    },
     stock: {
       list: "/stock",
       new: "/stock/new",

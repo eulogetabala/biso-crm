@@ -8,8 +8,7 @@ import {
   Building2,
   TrendingUp,
   ArrowUpRight,
-  Phone,
-  CalendarDays,
+  Truck,
   Plus,
   Search,
   type LucideIcon,
@@ -31,6 +30,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/src/providers";
 import { ClientRepository } from "@/src/repositories";
+import { getDb } from "@/src/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { formatDate, formatPhone } from "@/src/utils";
 import { CUSTOMER_TYPES, ROUTES } from "@/src/constants";
 import type { Client, Stats } from "@/src/types";
@@ -266,21 +267,30 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentClients, setRecentClients] = useState<Client[]>([]);
+  const [dailyDeliveries, setDailyDeliveries] = useState(0);
   const [loading, setLoading] = useState(true);
+  const todayString = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     (async () => {
       try {
-        const [s, r] = await Promise.all([
+        const [s, r, deliverySnapshot] = await Promise.all([
           ClientRepository.getStats(),
           ClientRepository.getRecentClients(8),
+          getDocs(
+            query(
+              collection(getDb(), "deliveries"),
+              where("deliveryDate", "==", todayString)
+            )
+          ),
         ]);
         setStats(s);
         setRecentClients(r);
+        setDailyDeliveries(deliverySnapshot.size);
       } catch { /* handled by empty state */ }
       finally { setLoading(false); }
     })();
-  }, []);
+  }, [todayString]);
 
   const hours = new Date().getHours();
   const greeting = hours < 12 ? "Bonjour" : hours < 18 ? "Bon après-midi" : "Bonsoir";
@@ -348,8 +358,8 @@ export default function DashboardPage() {
             {/* Stats */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatItem label="Total clients" value={stats?.totalClients ?? 0} icon={Users} accent={accent} delay={0.1} />
-              <StatItem label="Aujourd'hui" value={stats?.clientsToday ?? 0} icon={UserPlus} accent={emerald} delay={0.18} />
-              <StatItem label="Ce mois" value={stats?.clientsThisMonth ?? 0} icon={TrendingUp} accent={violet} delay={0.26} />
+              <StatItem label="Clients aujourd'hui" value={stats?.clientsToday ?? 0} icon={UserPlus} accent={emerald} delay={0.18} />
+              <StatItem label="Livraisons aujourd'hui" value={dailyDeliveries} icon={Truck} accent="#22c55e" delay={0.26} />
               <StatItem label="Entreprises" value={stats?.totalBusinesses ?? 0} icon={Building2} accent={indigo} delay={0.34} />
             </div>
 
@@ -461,27 +471,6 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                {/* Total */}
-                <motion.div
-                  initial={{ scale: 0.92, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.9, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <Card className="relative overflow-hidden border-border/40 bg-gradient-to-br from-primary/5 via-white/80 to-indigo-50/60 shadow-sm backdrop-blur-sm">
-                    <div className="absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-primary/5" />
-                    <CardContent className="relative py-6 text-center">
-                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <p className="text-[42px] font-black leading-none tracking-tight">
-                        <AnimatedCounter to={stats?.totalClients ?? 0} />
-                      </p>
-                      <p className="mt-2 text-xs font-medium text-muted-foreground">
-                        clients dans la base
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
               </motion.div>
             </div>
           </motion.div>
