@@ -57,14 +57,15 @@ export default function ClientDetailPage() {
 
   useEffect(() => { loadClient(); }, [id]);
 
-  async function handleArchive() {
-    if (!client || !user) return;
+  async function handleDelete() {
+    if (!client) return;
+    if (!confirm("Supprimer ce client ? Cette action est irréversible.")) return;
     setArchiving(true);
     try {
-      await ClientRepository.archive(client.id, user.id);
-      toast.success("Client archivé");
+      await ClientRepository.delete(client.id);
+      toast.success("Client supprimé");
       router.push(ROUTES.private.clients.list);
-    } catch { toast.error("Erreur lors de l'archivage"); }
+    } catch { toast.error("Erreur lors de la suppression"); }
     finally { setArchiving(false); }
   }
 
@@ -139,8 +140,8 @@ export default function ClientDetailPage() {
               </Link>
             )}
             {hasPermission(role ?? "employee", "clients:archive") && !client.isArchived && (
-              <Button variant="outline" size="sm" onClick={handleArchive} disabled={archiving} className="h-10 gap-2 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
-                {archiving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}Archiver
+              <Button variant="outline" size="sm" onClick={handleDelete} disabled={archiving} className="h-10 gap-2 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
+                {archiving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Supprimer
               </Button>
             )}
           </div>

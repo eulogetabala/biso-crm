@@ -9,6 +9,8 @@ import {
   Power,
   PowerOff,
   Users,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { PageContainer, PageHeader, Loader } from "@/components/common";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { UserRepository } from "@/src/repositories";
 import { useAuth } from "@/src/providers";
-import { ROUTES, ROLES } from "@/src/constants";
+import { ROUTES, ROLES, PAGINATION } from "@/src/constants";
 import type { User as UserType } from "@/src/types";
 import { toast } from "sonner";
 
@@ -32,6 +34,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [page, setPage] = useState(0);
+  const pageSize = PAGINATION.DEFAULT_PAGE_SIZE;
   const [newUser, setNewUser] = useState<{ firstName: string; lastName: string; email: string; password: string; newRole: "admin" | "employee" }>({ firstName: "", lastName: "", email: "", password: "", newRole: "employee" });
 
   useEffect(() => {
@@ -94,6 +98,9 @@ export default function UsersPage() {
 
   if (role !== "admin") return null;
 
+  const totalPages = Math.ceil(users.length / pageSize);
+  const paginated = users.slice(page * pageSize, (page + 1) * pageSize);
+
   return (
     <PageContainer>
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="mx-auto max-w-3xl space-y-6">
@@ -115,7 +122,7 @@ export default function UsersPage() {
         ) : (
           <Card className="border-border/40 bg-white/80 shadow-sm backdrop-blur-sm overflow-hidden">
             <CardContent className="p-0">
-              {users.map((u) => {
+              {paginated.map((u) => {
                 const initials = `${u.firstName[0]}${u.lastName[0]}`;
                 return (
                   <div key={u.id} className="flex items-center gap-4 px-5 py-3.5 border-b border-border/20 last:border-0">
@@ -146,6 +153,45 @@ export default function UsersPage() {
               })}
             </CardContent>
           </Card>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 px-1">
+            <p className="text-sm text-muted-foreground">
+              Page {page + 1} sur {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 rounded-lg"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i).map((i) => (
+                <Button
+                  key={i}
+                  variant={i === page ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8 rounded-lg text-xs"
+                  onClick={() => setPage(i)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 rounded-lg"
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         )}
       </motion.div>
 

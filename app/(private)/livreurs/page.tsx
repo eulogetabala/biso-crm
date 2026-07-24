@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LivreurRepository } from "@/src/repositories";
 import { formatPhone } from "@/src/utils";
-import { ROUTES } from "@/src/constants";
+import { ROUTES, PAGINATION } from "@/src/constants";
 import type { Livreur } from "@/src/types";
 import { toast } from "sonner";
 import { downloadCSV } from "@/src/utils";
@@ -40,7 +40,7 @@ export default function LivreursPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const pageSize = 20;
+  const pageSize = PAGINATION.DEFAULT_PAGE_SIZE;
 
   useEffect(() => { (async () => { try { setItems(await LivreurRepository.getAll()); } catch { /* */ } finally { setLoading(false); } })(); }, []);
 
@@ -126,8 +126,17 @@ export default function LivreursPage() {
               <div className="flex items-center justify-between pt-4">
                 <p className="text-xs text-muted-foreground">Page {page + 1} sur {totalPages}</p>
                 <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const pageNum = page < 3 ? i : page + i - 2;
+                    if (pageNum >= totalPages) return null;
+                    return (
+                      <Button key={pageNum} variant={pageNum === page ? "default" : "outline"} size="icon" className="h-8 w-8 rounded-lg text-xs font-medium" onClick={() => setPage(pageNum)}>
+                        {pageNum + 1}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page >= totalPages - 1} onClick={() => setPage(Math.min(totalPages - 1, page + 1))}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
               </div>
             )}
