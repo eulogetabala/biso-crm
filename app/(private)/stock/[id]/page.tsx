@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Package, DollarSign, Layers, Tag, Pencil, ShieldAlert } from "lucide-react";
+import { Package, Layers, Tag, Pencil, ShieldAlert } from "lucide-react";
 import { PageContainer, Breadcrumb, Loader } from "@/components/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ export default function StockDetailPage() {
         <Card className="border-border/40 bg-white/80 shadow-sm"><CardHeader><CardTitle className="text-sm font-bold">Informations</CardTitle></CardHeader><CardContent className="space-y-2">
           <Row icon={Layers} label="Catégorie" value={s.category} />
           <Row icon={Package} label="Quantité" value={`${s.quantity} ${s.unit ?? ""}`} />
-          {s.purchasePrice && <Row icon={DollarSign} label="Prix d'achat" value={`${s.purchasePrice.toLocaleString("fr-FR")} FCFA`} />}
+          {s.purchasePrice && <Row label="Prix d'achat" value={`${s.purchasePrice.toLocaleString("fr-FR")} FCFA`} />}
           {s.supplier && <Row icon={Tag} label="Fournisseur" value={s.supplier} />}
           {s.description && <Row icon={FileText} label="Description" value={s.description} />}
         </CardContent></Card>
@@ -45,6 +45,6 @@ export default function StockDetailPage() {
   );
 }
 
-function Row({ icon: Icon, label, value }: { icon: typeof Package; label: string; value: string }) {
-  return <div className="flex items-start gap-3 rounded-lg p-2.5 hover:bg-muted/40"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 shrink-0"><Icon className="h-4 w-4 text-muted-foreground" /></div><div><p className="text-[11px] font-medium uppercase text-muted-foreground/70">{label}</p><p className="text-sm font-medium">{value}</p></div></div>;
+function Row({ icon: Icon, label, value }: { icon?: typeof Package; label: string; value: string }) {
+  return <div className="flex items-start gap-3 rounded-lg p-2.5 hover:bg-muted/40">{Icon && <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 shrink-0"><Icon className="h-4 w-4 text-muted-foreground" /></div>}<div><p className="text-[11px] font-medium uppercase text-muted-foreground/70">{label}</p><p className="text-sm font-medium">{value}</p></div></div>;
 }

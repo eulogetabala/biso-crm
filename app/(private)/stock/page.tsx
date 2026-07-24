@@ -12,7 +12,6 @@ import {
   MoreHorizontal,
   Package,
   Trash2,
-  DollarSign,
   Layers,
   Download,
   Printer,
@@ -103,7 +102,7 @@ export default function StockPage() {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
                       <span className="flex items-center gap-1"><Layers className="h-3 w-3" />{s.category}</span>
                       <span>Qté: {s.quantity} {s.unit}</span>
-                      {s.purchasePrice && <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{s.purchasePrice.toLocaleString("fr-FR")} FCFA</span>}
+                      {s.purchasePrice && <span className="flex items-center gap-1">{s.purchasePrice.toLocaleString("fr-FR")} FCFA</span>}
                     </div>
                   </div>
                   <Badge variant={s.isArchived ? "outline" : "secondary"} className="text-xs">{s.isArchived ? "Archivé" : "Actif"}</Badge>
