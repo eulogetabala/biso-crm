@@ -233,7 +233,7 @@ export default function LivraisonsPage() {
   const totalPages = Math.ceil(filteredDeliveries.length / pageSize);
 
   // Debounced client search
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleClientSearch = useCallback(
     async (term: string) => {
