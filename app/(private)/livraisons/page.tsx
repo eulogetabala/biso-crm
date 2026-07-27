@@ -602,8 +602,8 @@ export default function LivraisonsPage() {
 
       {/* Dialog: Nouvelle livraison */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border border-border/40 shadow-2xl bg-white">
-          <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-6 py-5 border-b border-border/30">
+        <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border border-border/40 shadow-2xl bg-white flex flex-col max-h-[90vh]">
+          <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-6 py-5 border-b border-border/30 shrink-0">
             <DialogHeader className="gap-1">
               <div className="flex items-center gap-2.5">
                 <div className="rounded-xl bg-orange-500 p-2 text-white shadow-sm shadow-orange-500/20">
@@ -620,7 +620,8 @@ export default function LivraisonsPage() {
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 space-y-5 overflow-y-auto flex-1">
               {/* Client */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
@@ -880,7 +881,9 @@ export default function LivraisonsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/30 -mx-6 -mb-6 bg-muted/30 px-6 py-4">
+              </div>
+
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border/30 bg-muted/30 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
