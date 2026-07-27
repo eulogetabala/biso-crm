@@ -364,7 +364,7 @@ export default function LivraisonsPage() {
         address: values.address,
         packageName: values.packageName,
         quantity: values.quantity,
-        notes: values.notes,
+        notes: values.notes ?? "",
         createdAt: new Date().toISOString(),
       };
       setDeliveries((prev) => [newDelivery, ...prev]);
