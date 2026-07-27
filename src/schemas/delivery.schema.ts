@@ -7,7 +7,7 @@ export const deliverySchema = z.object({
   deliveryDate: z.string().min(1, "La date est obligatoire"),
   address: z.string().min(1, "L'adresse est obligatoire"),
   packageName: z.string().min(1, "Le nom du colis est obligatoire"),
-  quantity: z.coerce.number().int().min(1, "Minimum 1"),
+  quantity: z.number().int().min(1, "Minimum 1"),
   notes: z.string().optional().or(z.literal("")),
 });
 
