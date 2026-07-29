@@ -127,19 +127,7 @@ export default function UsersPage() {
       toast.success("Utilisateur créé");
       form.reset();
       setDialogOpen(false);
-      setUsers((prev) => [
-        {
-          id: uid,
-          firstName: values.firstName,
-          lastName: values.lastName,
-          email: values.email,
-          role: values.role,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      await loadUsers();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Erreur");
     } finally { setCreating(false); }
