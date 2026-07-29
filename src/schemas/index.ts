@@ -6,6 +6,8 @@ export { deliverySchema } from "./delivery.schema";
 export type { DeliveryFormValues } from "./delivery.schema";
 export { partnerSchema } from "./partner.schema";
 export type { PartnerFormValues } from "./partner.schema";
+export { userSchema } from "./user.schema";
+export type { UserFormValues } from "./user.schema";
 export { settingsSchema } from "./settings.schema";
 export type { SettingsFormValues } from "./settings.schema";
 export { livreurSchema, stockSchema } from "./operations.schema";
