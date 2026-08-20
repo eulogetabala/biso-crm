@@ -70,5 +70,17 @@ service cloud.firestore {
       allow create, update: if isActiveStaff();
       allow delete: if isAdmin();
     }
+
+    match /deliveries/{docId} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /partners/{docId} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff();
+      allow delete: if isAdmin();
+    }
   }
 }

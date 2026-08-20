@@ -5,6 +5,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   orderBy,
   type DocumentSnapshot,
@@ -43,5 +44,9 @@ export const StockRepository = {
 
   async archive(id: string, userId: string) {
     await updateDoc(getRef(id), { isArchived: true, updatedBy: userId, updatedAt: serverTimestamp() as Timestamp });
+  },
+
+  async delete(id: string) {
+    await deleteDoc(getRef(id));
   },
 };

@@ -11,8 +11,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Package,
-  Archive,
-  DollarSign,
+  Trash2,
   Layers,
   Download,
   Printer,
@@ -25,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StockRepository } from "@/src/repositories";
 import { downloadCSV } from "@/src/utils";
-import { ROUTES } from "@/src/constants";
+import { ROUTES, PAGINATION } from "@/src/constants";
 import type { StockItem } from "@/src/types";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -36,7 +35,7 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const pageSize = 20;
+  const pageSize = PAGINATION.DEFAULT_PAGE_SIZE;
 
   useEffect(() => { (async () => { try { setItems(await StockRepository.getAll()); } catch { /* */ } finally { setLoading(false); } })(); }, []);
 
@@ -49,9 +48,10 @@ export default function StockPage() {
   const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
   const totalPages = Math.ceil(filtered.length / pageSize);
 
-  async function handleArchive(s: StockItem) {
-    try { await StockRepository.archive(s.id, "system"); toast.success("Archivé"); setItems(await StockRepository.getAll()); }
-    catch { toast.error("Erreur"); }
+  async function handleDelete(s: StockItem) {
+    if (!confirm("Supprimer cet article ? Cette action est irréversible.")) return;
+    try { await StockRepository.delete(s.id); toast.success("Article supprimé"); setItems(await StockRepository.getAll()); }
+    catch { toast.error("Erreur lors de la suppression"); }
   }
 
   function handlePrint() { window.print(); }
@@ -102,7 +102,7 @@ export default function StockPage() {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
                       <span className="flex items-center gap-1"><Layers className="h-3 w-3" />{s.category}</span>
                       <span>Qté: {s.quantity} {s.unit}</span>
-                      {s.purchasePrice && <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{s.purchasePrice.toLocaleString("fr-FR")} FCFA</span>}
+                      {s.purchasePrice && <span className="flex items-center gap-1">{s.purchasePrice.toLocaleString("fr-FR")} FCFA</span>}
                     </div>
                   </div>
                   <Badge variant={s.isArchived ? "outline" : "secondary"} className="text-xs">{s.isArchived ? "Archivé" : "Actif"}</Badge>
@@ -111,7 +111,7 @@ export default function StockPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => router.push(ROUTES.private.stock.detail(s.id))}>Voir</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => router.push(ROUTES.private.stock.edit(s.id))}>Modifier</DropdownMenuItem>
-                      {!s.isArchived && <DropdownMenuItem onClick={() => handleArchive(s)} className="text-destructive"><Archive className="mr-2 h-4 w-4" />Archiver</DropdownMenuItem>}
+                      {!s.isArchived && <DropdownMenuItem onClick={() => handleDelete(s)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Supprimer</DropdownMenuItem>}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -121,8 +121,17 @@ export default function StockPage() {
               <div className="flex items-center justify-between pt-4">
                 <p className="text-xs text-muted-foreground">Page {page + 1} sur {totalPages}</p>
                 <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const pageNum = page < 3 ? i : page + i - 2;
+                    if (pageNum >= totalPages) return null;
+                    return (
+                      <Button key={pageNum} variant={pageNum === page ? "default" : "outline"} size="icon" className="h-8 w-8 rounded-lg text-xs font-medium" onClick={() => setPage(pageNum)}>
+                        {pageNum + 1}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={page >= totalPages - 1} onClick={() => setPage(Math.min(totalPages - 1, page + 1))}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
               </div>
             )}

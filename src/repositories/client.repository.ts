@@ -5,6 +5,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -88,6 +89,10 @@ export const ClientRepository = {
       updatedBy: userId,
       updatedAt: now,
     });
+  },
+
+  async delete(id: string) {
+    await deleteDoc(getDocRef(id));
   },
 
   async getByPhone(phone: string) {

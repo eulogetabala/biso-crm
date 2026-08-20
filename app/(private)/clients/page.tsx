@@ -6,18 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   UserPlus,
-  SlidersHorizontal,
   X,
   ChevronLeft,
   ChevronRight,
   Eye,
   Pencil,
-  Archive,
+  Trash2,
   MoreHorizontal,
   Phone,
   Building2,
   CalendarDays,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from "@tanstack/react-table";
 import {
   PageContainer,
@@ -39,13 +39,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -65,9 +58,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
 
   const pageSize = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -97,13 +88,8 @@ export default function ClientsPage() {
 
   useEffect(() => { loadClients(); }, [loadClients]);
 
-  const filtered = clients.filter((c) => {
-    if (typeFilter !== "all" && c.customerType !== typeFilter) return false;
-    return true;
-  });
-
-  const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
-  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = clients.slice(page * pageSize, (page + 1) * pageSize);
+  const totalPages = Math.ceil(clients.length / pageSize);
 
   const columns: ColumnDef<Client>[] = [
     {
@@ -213,9 +199,21 @@ export default function ClientsPage() {
                 Modifier
               </DropdownMenuItem>
               {hasPermission(role ?? "employee", "clients:archive") && (
-                <DropdownMenuItem className="text-destructive">
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archiver
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={async () => {
+                    if (!confirm("Supprimer ce client ? Cette action est irréversible.")) return;
+                    try {
+                      await ClientRepository.delete(c.id);
+                      toast.success("Client supprimé avec succès");
+                      loadClients();
+                    } catch {
+                      toast.error("Erreur lors de la suppression");
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -235,7 +233,7 @@ export default function ClientsPage() {
     <PageContainer>
       <PageHeader
         title="Clients"
-        description={`${filtered.length} client${filtered.length > 1 ? "s" : ""} dans la base`}
+        description={`${clients.length} client${clients.length > 1 ? "s" : ""} dans la base`}
       >
         <Link
           href={ROUTES.private.clients.new}
@@ -265,52 +263,7 @@ export default function ClientsPage() {
             </button>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowFilters(!showFilters)}
-          className="h-11 gap-2 rounded-xl border-border/50 bg-white text-sm shadow-sm"
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filtres
-          {typeFilter !== "all" && (
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">1</Badge>
-          )}
-        </Button>
       </div>
-
-      {showFilters && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="flex flex-wrap items-center gap-3 rounded-xl border border-border/40 bg-white/80 p-4 backdrop-blur-sm"
-        >
-            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v ?? "all"); setPage(0); }}>
-            <SelectTrigger className="h-9 w-[180px] rounded-lg border-border/50 bg-white text-sm">
-              <SelectValue>
-                {typeFilter === "all" ? "Tous les types" : CUSTOMER_TYPES[typeFilter as keyof typeof CUSTOMER_TYPES]}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les types</SelectItem>
-              <SelectItem value="individual">Particuliers</SelectItem>
-              <SelectItem value="business">Entreprises</SelectItem>
-            </SelectContent>
-          </Select>
-          {typeFilter !== "all" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTypeFilter("all")}
-              className="h-9 text-xs text-muted-foreground"
-            >
-              <X className="mr-1 h-3 w-3" />
-              Réinitialiser
-            </Button>
-          )}
-        </motion.div>
-      )}
 
       {/* Table */}
       <AnimatePresence mode="wait">
@@ -334,7 +287,7 @@ export default function ClientsPage() {
               </CardContent>
             </Card>
           </motion.div>
-        ) : filtered.length === 0 ? (
+        ) : clients.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, y: 8 }}

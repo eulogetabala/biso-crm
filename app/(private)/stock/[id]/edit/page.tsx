@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Package, Save, Loader2, ShieldAlert, DollarSign, Layers, Tag, FileText } from "lucide-react";
+import { Package, Save, Loader2, ShieldAlert, Layers, Tag, FileText } from "lucide-react";
 import { PageContainer, Breadcrumb, Loader } from "@/components/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export default function EditStockPage() {
             <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" />Catégorie *</FormLabel><FormControl><Input className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="quantity" render={({ field }) => (<FormItem><FormLabel>Quantité *</FormLabel><FormControl><Input type="number" min="0" className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="unit" render={({ field }) => (<FormItem><FormLabel>Unité</FormLabel><FormControl><Input className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="purchasePrice" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><DollarSign className="h-3.5 w-3.5" />Prix (FCFA)</FormLabel><FormControl><Input type="number" min="0" className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="purchasePrice" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2">Prix (FCFA)</FormLabel><FormControl><Input type="number" min="0" className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="purchaseDate" render={({ field }) => (<FormItem><FormLabel>Date d&apos;achat</FormLabel><FormControl><Input type="date" className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="supplier" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel className="flex items-center gap-2"><Tag className="h-3.5 w-3.5" />Fournisseur</FormLabel><FormControl><Input className="h-11 rounded-xl border-border/50 bg-white shadow-sm" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel className="flex items-center gap-2"><FileText className="h-3.5 w-3.5" />Description</FormLabel><FormControl><Textarea className="min-h-[80px] rounded-xl border-border/50 bg-white shadow-sm resize-none" {...field} /></FormControl><FormMessage /></FormItem>)} />
