@@ -1,6 +1,10 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ─── Helpers ───────────────────────────────────────────────────────────
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -27,37 +31,77 @@ service cloud.firestore {
       return isActiveStaff() && currentUser().role == 'admin';
     }
 
-    // Own profile: readable without circular get() dependency
+    function isEmployee() {
+      return isActiveStaff() && currentUser().role == 'employee';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Archive / unarchive is admin-only (clients)
+    function changesArchiveFlag() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['isArchived']);
+    }
+
+    // ─── users ─────────────────────────────────────────────────────────────
+    // Doc ID = Firebase Auth UID
+    // Admin: full management
+    // Employee: read all active staff list; update own profile (role locked)
+
     match /users/{userId} {
-      allow read: if isSignedIn() && (
-        request.auth.uid == userId || isActiveStaff()
-      );
+      allow read: if isOwner(userId) || isActiveStaff();
+
+      // Bootstrap: newly created Auth account can create its own profile
+      // Admin can create any user profile
       allow create: if isAdmin()
         || (
-          isSignedIn()
-          && request.auth.uid == userId
+          isOwner(userId)
+          && request.resource.data.keys().hasAll([
+            'id', 'firstName', 'lastName', 'email', 'role', 'isActive'
+          ])
+          && request.resource.data.id == userId
+          && request.resource.data.email == request.auth.token.email
           && request.resource.data.role in ['admin', 'employee']
           && request.resource.data.isActive == true
         );
+
       allow update: if isAdmin()
         || (
-          isSignedIn()
-          && request.auth.uid == userId
+          isOwner(userId)
+          && isActiveStaff()
           && request.resource.data.role == resource.data.role
+          && request.resource.data.isActive == resource.data.isActive
         );
+
       allow delete: if isAdmin();
     }
+
+    // ─── clients ───────────────────────────────────────────────────────────
+    // Admin + employee: read / create / update
+    // Archive (isArchived) + hard delete: admin only
 
     match /clients/{clientId} {
       allow read: if isActiveStaff();
-      allow create, update: if isActiveStaff();
+
+      allow create: if isActiveStaff()
+        && request.resource.data.keys().hasAny(['firstName', 'lastName', 'phone']);
+
+      allow update: if isAdmin()
+        || (isActiveStaff() && !changesArchiveFlag());
+
       allow delete: if isAdmin();
     }
 
+    // ─── settings ──────────────────────────────────────────────────────────
+    // Read: all staff | Write: admin only
+
     match /settings/{docId} {
       allow read: if isActiveStaff();
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
+
+    // ─── livreurs ──────────────────────────────────────────────────────────
 
     match /livreurs/{docId} {
       allow read: if isActiveStaff();
@@ -65,11 +109,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ─── stock ─────────────────────────────────────────────────────────────
+
     match /stock/{docId} {
       allow read: if isActiveStaff();
       allow create, update: if isActiveStaff();
       allow delete: if isAdmin();
     }
+
+    // ─── deliveries (livraisons) ────────────────────────────────────────────
 
     match /deliveries/{docId} {
       allow read: if isActiveStaff();
@@ -77,10 +125,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ─── partners (partenaires) ────────────────────────────────────────────
+
     match /partners/{docId} {
       allow read: if isActiveStaff();
       allow create, update: if isActiveStaff();
       allow delete: if isAdmin();
     }
+
+    // ─── Deny everything else by default ───────────────────────────────────
+    // (no catch-all allow)
   }
 }

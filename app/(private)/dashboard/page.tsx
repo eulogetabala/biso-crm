@@ -275,21 +275,14 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [s, r, deliverySnapshot] = await Promise.all([
+        const [s, r] = await Promise.all([
           ClientRepository.getStats(),
           ClientRepository.getRecentClients(8),
-          getDocs(
-            query(
-              collection(getDb(), "deliveries"),
-              where("deliveryDate", "==", todayString)
-            )
-          ),
         ]);
         setStats(s);
         setRecentClients(r);
-        setDailyDeliveries(deliverySnapshot.size);
       } catch (err) {
-        console.error("[Dashboard] Erreur Firestore:", err);
+        console.error("[Dashboard] Erreur clients:", err);
         const message =
           err instanceof Error ? err.message : "Erreur de connexion à la base";
         toast.error(
@@ -298,7 +291,21 @@ export default function DashboardPage() {
             : `Impossible de charger les données: ${message}`
         );
       }
-      finally { setLoading(false); }
+
+      try {
+        const deliverySnapshot = await getDocs(
+          query(
+            collection(getDb(), "deliveries"),
+            where("deliveryDate", "==", todayString)
+          )
+        );
+        setDailyDeliveries(deliverySnapshot.size);
+      } catch (err) {
+        console.error("[Dashboard] Erreur deliveries:", err);
+        setDailyDeliveries(0);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [todayString]);
 
