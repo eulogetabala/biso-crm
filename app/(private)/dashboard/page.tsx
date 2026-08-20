@@ -35,6 +35,7 @@ import { formatDate, formatPhone } from "@/src/utils";
 import { CUSTOMER_TYPES, ROUTES } from "@/src/constants";
 import type { Client, Stats } from "@/src/types";
 import Link from "next/link";
+import { toast } from "sonner";
 
 function AnimatedCounter({ to }: { to: number }) {
   const [count, setCount] = useState(0);
@@ -277,7 +278,16 @@ export default function DashboardPage() {
         ]);
         setStats(s);
         setRecentClients(r);
-      } catch { /* handled by empty state */ }
+      } catch (err) {
+        console.error("[Dashboard] Erreur Firestore:", err);
+        const message =
+          err instanceof Error ? err.message : "Erreur de connexion à la base";
+        toast.error(
+          message.includes("permission") || message.includes("Permission")
+            ? "Accès Firestore refusé (permission-denied). Vérifiez la connexion et les règles Firebase."
+            : `Impossible de charger les données: ${message}`
+        );
+      }
       finally { setLoading(false); }
     })();
   }, []);

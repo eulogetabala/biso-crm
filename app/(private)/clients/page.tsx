@@ -57,6 +57,7 @@ import { CUSTOMER_TYPES, SOURCES, PAGINATION, ROUTES, hasPermission } from "@/sr
 import { useAuth } from "@/src/providers";
 import type { Client } from "@/src/types";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ClientsPage() {
   const router = useRouter();
@@ -80,7 +81,17 @@ export default function ClientsPage() {
         const result = await ClientRepository.getAll(pageSize);
         setClients(result.data);
       }
-    } catch { /* empty */ }
+    } catch (err) {
+      console.error("[Clients] Erreur Firestore:", err);
+      const message =
+        err instanceof Error ? err.message : "Erreur de connexion à la base";
+      toast.error(
+        message.includes("permission") || message.includes("Permission")
+          ? "Accès Firestore refusé (permission-denied). Vérifiez la connexion et les règles Firebase."
+          : `Impossible de charger les clients: ${message}`
+      );
+      setClients([]);
+    }
     finally { setLoading(false); }
   }, [search, pageSize]);
 

@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PUBLIC_FIREBASE_API_KEY = "AIzaSyAgxUuP_1S0xBjN8stO7mZMJmj9rqCX68g"
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "connecthub-f4ef1.firebaseapp.com"
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID = "connecthub-f4ef1"
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "connecthub-f4ef1.firebasestorage.app"
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "116563846785"
+  NEXT_PUBLIC_FIREBASE_APP_ID = "1:116563846785:web:a04ab7451af08c72c68f80"
+  NEXT_PUBLIC_APP_URL = "https://biso-crm.netlify.app"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

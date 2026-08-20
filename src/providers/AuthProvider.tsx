@@ -43,8 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userDoc = await getDoc(doc(dbInstance, "users", fbUser.uid));
           if (userDoc.exists()) {
             setUser({ id: userDoc.id, ...userDoc.data() } as User);
+          } else {
+            console.error(
+              `[Auth] Document users/${fbUser.uid} introuvable. Sans ce document, le profil et souvent les règles Firestore échouent.`
+            );
+            setUser(null);
           }
-        } catch {
+        } catch (err) {
+          console.error("[Auth] Impossible de lire users/{uid}:", err);
           setUser(null);
         }
       } else {
