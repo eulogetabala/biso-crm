@@ -50,7 +50,6 @@ import { CUSTOMER_TYPES, SOURCES, PAGINATION, ROUTES, hasPermission } from "@/sr
 import { useAuth } from "@/src/providers";
 import type { Client } from "@/src/types";
 import Link from "next/link";
-import { toast } from "sonner";
 
 export default function ClientsPage() {
   const router = useRouter();
