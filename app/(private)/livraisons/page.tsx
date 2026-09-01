@@ -33,9 +33,11 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -74,6 +76,7 @@ import { deliverySchema, type DeliveryFormValues } from "@/src/schemas";
 import type { Client } from "@/src/types";
 import { toast } from "sonner";
 import { PAGINATION } from "@/src/constants";
+import { cn } from "@/lib/utils";
 
 interface Delivery {
   id: string;
@@ -86,7 +89,64 @@ interface Delivery {
   createdAt: string;
 }
 
+const QUICK_PERIODS = [
+  { value: "all", label: "Toutes" },
+  { value: "day", label: "Aujourd'hui" },
+  { value: "week", label: "Cette semaine" },
+  { value: "month", label: "Ce mois" },
+] as const;
+
+function toYearMonth(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function parseDeliveryDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(value);
+}
+
+function formatMonthLabel(yearMonth: string) {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const label = new Date(year, month - 1, 1).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function getAvailableMonths(deliveries: Delivery[]) {
+  const now = new Date();
+  const months = new Set<string>();
+
+  for (let i = 0; i < 12; i += 1) {
+    months.add(toYearMonth(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  }
+
+  for (const delivery of deliveries) {
+    const date = parseDeliveryDate(delivery.deliveryDate);
+    if (!Number.isNaN(date.getTime())) {
+      months.add(toYearMonth(date));
+    }
+  }
+
+  return Array.from(months).sort((a, b) => b.localeCompare(a));
+}
+
 function getPeriodBounds(period: string, referenceDate: Date) {
+  if (period === "all") {
+    return { start: null, end: null };
+  }
+
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    const [year, month] = period.split("-").map(Number);
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    return { start, end };
+  }
+
   const start = new Date(referenceDate);
   const end = new Date(referenceDate);
 
@@ -113,12 +173,28 @@ function getPeriodBounds(period: string, referenceDate: Date) {
   return { start, end };
 }
 
+function isInPeriod(dateValue: Date, start: Date | null, end: Date | null) {
+  if (!start || !end) return true;
+  return dateValue >= start && dateValue <= end;
+}
+
+function getPeriodDescription(period: string) {
+  if (period === "all") return "au total";
+  if (period === "day") return "aujourd'hui";
+  if (period === "week") return "cette semaine";
+  if (period === "month") return "ce mois";
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    return `en ${formatMonthLabel(period).toLowerCase()}`;
+  }
+  return "";
+}
+
 export default function LivraisonsPage() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [period, setPeriod] = useState("day");
+  const [period, setPeriod] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -182,11 +258,28 @@ export default function LivraisonsPage() {
     void loadData();
   }, []);
 
+  const currentYearMonth = toYearMonth(new Date());
+  const monthOptions = useMemo(() => getAvailableMonths(deliveries), [deliveries]);
+  const pastMonthOptions = monthOptions.filter((month) => month !== currentYearMonth);
+  const selectedMonth =
+    period === "month" ? currentYearMonth : /^\d{4}-\d{2}$/.test(period) ? period : null;
+  const activeQuickPeriod =
+    period === "all" || period === "day" || period === "week"
+      ? period
+      : period === "month" || period === currentYearMonth
+        ? "month"
+        : null;
+
+  const handlePeriodChange = (value: string) => {
+    setPeriod(value);
+    setPage(0);
+  };
+
   const summary = useMemo(() => {
     const { start, end } = getPeriodBounds(period, new Date());
     const filtered = deliveries.filter((delivery) => {
-      const dateValue = new Date(delivery.deliveryDate);
-      return dateValue >= start && dateValue <= end;
+      const dateValue = parseDeliveryDate(delivery.deliveryDate);
+      return isInPeriod(dateValue, start, end);
     });
 
     const totals = filtered.reduce((acc, delivery) => acc + delivery.quantity, 0);
@@ -219,8 +312,8 @@ export default function LivraisonsPage() {
   const filteredDeliveries = useMemo(() => {
     const { start, end } = getPeriodBounds(period, new Date());
     return deliveries.filter((delivery) => {
-      const dateValue = new Date(delivery.deliveryDate);
-      const inPeriod = dateValue >= start && dateValue <= end;
+      const dateValue = parseDeliveryDate(delivery.deliveryDate);
+      const inPeriod = isInPeriod(dateValue, start, end);
       if (!search.trim()) return inPeriod;
       const term = search.toLowerCase();
       const client = clients.find((item) => item.id === delivery.clientId);
@@ -390,7 +483,7 @@ export default function LivraisonsPage() {
     }
   };
 
-  const periodLabel = period === "day" ? "aujourd'hui" : period === "week" ? "cette semaine" : "ce mois";
+  const periodLabel = getPeriodDescription(period);
 
   return (
     <PageContainer>
@@ -408,16 +501,56 @@ export default function LivraisonsPage() {
       </PageHeader>
 
       {/* Period selector + Search */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Select value={period} onValueChange={(value) => setPeriod(value ?? "day")}>
-            <SelectTrigger className="h-11 w-[200px] rounded-xl border-border/50 bg-white shadow-sm">
-              <SelectValue />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex flex-wrap items-center rounded-xl border border-border/50 bg-white p-1 shadow-sm">
+            {QUICK_PERIODS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => handlePeriodChange(item.value)}
+                className={cn(
+                  "h-9 rounded-lg px-3 text-sm font-medium transition-colors",
+                  activeQuickPeriod === item.value
+                    ? "bg-orange-500 text-white shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <Select
+            value={selectedMonth}
+            onValueChange={(value) => {
+              if (!value) return;
+              handlePeriodChange(value === currentYearMonth ? "month" : value);
+            }}
+          >
+            <SelectTrigger className="h-11 w-full rounded-xl border-border/50 bg-white shadow-sm sm:w-[220px]">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <span className={cn("flex-1 truncate text-left", !selectedMonth && "text-muted-foreground")}>
+                {selectedMonth ? formatMonthLabel(selectedMonth) : "Mois passés"}
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day">Aujourd'hui</SelectItem>
-              <SelectItem value="week">Cette semaine</SelectItem>
-              <SelectItem value="month">Ce mois</SelectItem>
+              <SelectGroup>
+                <SelectLabel>Ce mois</SelectLabel>
+                <SelectItem value={currentYearMonth}>
+                  {formatMonthLabel(currentYearMonth)}
+                </SelectItem>
+              </SelectGroup>
+              {pastMonthOptions.length > 0 && <SelectSeparator />}
+              {pastMonthOptions.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel>Mois passés</SelectLabel>
+                  {pastMonthOptions.map((month) => (
+                    <SelectItem key={month} value={month}>
+                      {formatMonthLabel(month)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -464,7 +597,11 @@ export default function LivraisonsPage() {
                 <EmptyState
                   icon={ClipboardList}
                   title="Aucune livraison"
-                  description={`Aucune livraison enregistrée ${periodLabel}. Cliquez sur "Nouvelle livraison" pour commencer.`}
+                  description={
+                    period === "all"
+                      ? `Aucune livraison enregistrée. Cliquez sur "Nouvelle livraison" pour commencer.`
+                      : `Aucune livraison enregistrée ${periodLabel}. Cliquez sur "Nouvelle livraison" pour commencer.`
+                  }
                   actionLabel="Première livraison"
                   onAction={openCreate}
                 />
