@@ -29,8 +29,9 @@ export default function RootLayout({
     <html
       lang="fr"
       className={`${jakarta.variable} ${jetbrains.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="h-full bg-background font-sans text-foreground">
+      <body className="h-full bg-background font-sans text-foreground" suppressHydrationWarning>
         <AuthProvider>
           {children}
           <Toaster />

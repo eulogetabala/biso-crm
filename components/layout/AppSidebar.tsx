@@ -11,6 +11,7 @@ import {
   Shield,
   Handshake,
   Truck,
+  Wallet,
   User,
   LogOut,
   PanelLeftClose,
@@ -36,6 +37,7 @@ const mainItems: NavItem[] = [
   { label: "Livreurs", href: ROUTES.private.livreurs.list, icon: Bike },
   { label: "Partenaires", href: ROUTES.private.partenaires.list, icon: Handshake },
   { label: "Livraisons", href: ROUTES.private.livraisons.list, icon: Truck },
+  { label: "Dépenses", href: ROUTES.private.depenses.list, icon: Wallet },
   { label: "Stock", href: ROUTES.private.stock.list, icon: Package },
 ];
 

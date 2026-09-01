@@ -125,6 +125,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ─── expenses (dépenses) ───────────────────────────────────────────────
+
+    match /expenses/{docId} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff();
+      allow delete: if isAdmin();
+    }
+
     // ─── partners (partenaires) ────────────────────────────────────────────
 
     match /partners/{docId} {

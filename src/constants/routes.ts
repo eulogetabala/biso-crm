@@ -23,6 +23,9 @@ export const ROUTES = {
     livraisons: {
       list: "/livraisons",
     },
+    depenses: {
+      list: "/depenses",
+    },
     stock: {
       list: "/stock",
       new: "/stock/new",

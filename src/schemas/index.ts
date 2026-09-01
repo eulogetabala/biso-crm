@@ -4,6 +4,8 @@ export { clientSchema } from "./client.schema";
 export type { ClientFormValues } from "./client.schema";
 export { deliverySchema } from "./delivery.schema";
 export type { DeliveryFormValues } from "./delivery.schema";
+export { expenseSchema } from "./expense.schema";
+export type { ExpenseFormValues } from "./expense.schema";
 export { partnerSchema } from "./partner.schema";
 export type { PartnerFormValues } from "./partner.schema";
 export { userSchema } from "./user.schema";
