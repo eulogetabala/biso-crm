@@ -627,7 +627,10 @@ export default function DepensesPage() {
                           className="h-10 rounded-xl border-border/50 bg-muted/10 focus-visible:bg-white transition-colors text-sm"
                           {...field}
                           value={field.value === 0 ? "" : field.value}
-                          onChange={(event) => field.onChange(event.target.value === "" ? 0 : event.target.value)}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            field.onChange(value === "" ? 0 : Number(value));
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
