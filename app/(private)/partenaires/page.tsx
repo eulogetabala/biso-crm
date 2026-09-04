@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Mail, Phone, Plus, Search, Trash2, PencilLine, Handshake, X, Loader2, User, FileText, ChevronLeft, ChevronRight, Save,
 } from "lucide-react";
-import { PageContainer, PageHeader, EmptyState } from "@/components/common";
+import { PageContainer, PageHeader, EmptyState, PrintExportButtons } from "@/components/common";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { getDb } from "@/src/firebase";
 import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
 import { PAGINATION } from "@/src/constants";
+import { downloadCSV } from "@/src/utils";
 import { partnerSchema, type PartnerFormValues } from "@/src/schemas";
 
 interface Partner {
@@ -101,6 +102,24 @@ export default function PartenairesPage() {
 
   const paginatedPartners = filteredPartners.slice(page * pageSize, (page + 1) * pageSize);
   const totalPages = Math.ceil(filteredPartners.length / pageSize);
+
+  const handleExport = () => {
+    if (filteredPartners.length === 0) {
+      toast.error("Aucun partenaire à exporter.");
+      return;
+    }
+    downloadCSV(
+      filteredPartners.map((partner) => ({
+        Nom: partner.name,
+        Type: partner.type,
+        Contact: partner.contactName,
+        Email: partner.email,
+        Téléphone: partner.phone,
+        Notes: partner.notes,
+      })),
+      "partenaires-biso",
+    );
+  };
 
   const onSubmit = async (values: PartnerFormValues) => {
     setSaving(true);
@@ -194,6 +213,11 @@ export default function PartenairesPage() {
             </button>
           )}
         </div>
+        <PrintExportButtons
+          onExport={handleExport}
+          exportLabel="CSV"
+          disabled={filteredPartners.length === 0}
+        />
       </div>
 
       <AnimatePresence mode="wait">

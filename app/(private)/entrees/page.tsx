@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Wallet,
+  TrendingUp,
   CalendarDays,
-  Receipt,
+  CircleDollarSign,
   MessageSquare,
   Save,
   Loader2,
@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/dialog";
 import { getDb } from "@/src/firebase";
 import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
-import { expenseSchema, type ExpenseFormValues } from "@/src/schemas";
+import { incomeSchema, type IncomeFormValues } from "@/src/schemas";
 import { useAuth } from "@/src/providers";
 import { toast } from "sonner";
 import { PAGINATION } from "@/src/constants";
@@ -71,18 +71,18 @@ import {
 } from "@/src/utils";
 import { cn } from "@/lib/utils";
 
-interface Expense {
+interface Income {
   id: string;
-  expenseDate: string;
+  incomeDate: string;
   label: string;
   amount: number;
   notes: string;
   createdAt: string;
 }
 
-export default function DepensesPage() {
+export default function EntreesPage() {
   const { role } = useAuth();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -90,17 +90,17 @@ export default function DepensesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [detailExpense, setDetailExpense] = useState<Expense | null>(null);
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const [detailIncome, setDetailIncome] = useState<Income | null>(null);
+  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Income | null>(null);
   const pageSize = PAGINATION.DEFAULT_PAGE_SIZE;
 
-  const form = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseSchema),
+  const form = useForm<IncomeFormValues>({
+    resolver: zodResolver(incomeSchema),
     defaultValues: {
       label: "",
       amount: 0,
-      expenseDate: new Date().toISOString().slice(0, 10),
+      incomeDate: new Date().toISOString().slice(0, 10),
       notes: "",
     },
   });
@@ -112,19 +112,19 @@ export default function DepensesPage() {
       try {
         const db = getDb();
         const snapshot = await getDocs(
-          query(collection(db, "expenses"), orderBy("expenseDate", "desc")),
+          query(collection(db, "incomes"), orderBy("incomeDate", "desc")),
         );
         if (cancelled) return;
-        setExpenses(
+        setIncomes(
           snapshot.docs.map((docSnap) => ({
             id: docSnap.id,
-            ...(docSnap.data() as Omit<Expense, "id">),
+            ...(docSnap.data() as Omit<Income, "id">),
           })),
         );
       } catch (err: unknown) {
         if (!cancelled) {
           toast.error(
-            err instanceof Error ? err.message : "Impossible de charger les dépenses.",
+            err instanceof Error ? err.message : "Impossible de charger les entrées.",
           );
         }
       } finally {
@@ -140,8 +140,8 @@ export default function DepensesPage() {
 
   const currentYearMonth = toYearMonth(new Date());
   const monthOptions = useMemo(
-    () => getAvailableMonths(expenses.map((expense) => expense.expenseDate)),
-    [expenses],
+    () => getAvailableMonths(incomes.map((income) => income.incomeDate)),
+    [incomes],
   );
   const pastMonthOptions = monthOptions.filter((month) => month !== currentYearMonth);
   const selectedMonth =
@@ -159,91 +159,91 @@ export default function DepensesPage() {
   };
 
   const summary = useMemo(
-    () => summarizeRecords(expenses, (expense) => expense.expenseDate, period),
-    [expenses, period],
+    () => summarizeRecords(incomes, (income) => income.incomeDate, period),
+    [incomes, period],
   );
 
-  const filteredExpenses = useMemo(
-    () => filterRecords(expenses, (expense) => expense.expenseDate, period, search),
-    [expenses, period, search],
+  const filteredIncomes = useMemo(
+    () => filterRecords(incomes, (income) => income.incomeDate, period, search),
+    [incomes, period, search],
   );
 
-  const paginatedExpenses = filteredExpenses.slice(page * pageSize, (page + 1) * pageSize);
-  const totalPages = Math.ceil(filteredExpenses.length / pageSize);
+  const paginatedIncomes = filteredIncomes.slice(page * pageSize, (page + 1) * pageSize);
+  const totalPages = Math.ceil(filteredIncomes.length / pageSize);
   const periodLabel = getPeriodDescription(period);
 
   const openCreate = () => {
-    setEditingExpense(null);
+    setEditingIncome(null);
     form.reset({
       label: "",
       amount: 0,
-      expenseDate: new Date().toISOString().slice(0, 10),
+      incomeDate: new Date().toISOString().slice(0, 10),
       notes: "",
     });
     setDialogOpen(true);
   };
 
-  const openEdit = (expense: Expense) => {
-    setEditingExpense(expense);
-    setDetailExpense(null);
+  const openEdit = (income: Income) => {
+    setEditingIncome(income);
+    setDetailIncome(null);
     form.reset({
-      label: expense.label,
-      amount: Number(expense.amount),
-      expenseDate: expense.expenseDate.slice(0, 10),
-      notes: expense.notes ?? "",
+      label: income.label,
+      amount: Number(income.amount),
+      incomeDate: income.incomeDate.slice(0, 10),
+      notes: income.notes ?? "",
     });
     setDialogOpen(true);
   };
 
   const handleExport = () => {
-    if (filteredExpenses.length === 0) {
-      toast.error("Aucune dépense à exporter.");
+    if (filteredIncomes.length === 0) {
+      toast.error("Aucune entrée à exporter.");
       return;
     }
     downloadCSV(
-      filteredExpenses.map((expense) => ({
-        Date: parseLocalDate(expense.expenseDate).toLocaleDateString("fr-FR"),
-        Libellé: expense.label,
-        Montant: expense.amount,
-        Notes: expense.notes,
+      filteredIncomes.map((income) => ({
+        Date: parseLocalDate(income.incomeDate).toLocaleDateString("fr-FR"),
+        Libellé: income.label,
+        Montant: income.amount,
+        Notes: income.notes,
       })),
-      `depenses-biso-${period}`,
+      `entrees-biso-${period}`,
     );
   };
 
-  const onSubmit = async (values: ExpenseFormValues) => {
+  const onSubmit = async (values: IncomeFormValues) => {
     setSaving(true);
     try {
       const db = getDb();
       const payload = {
-        expenseDate: values.expenseDate,
+        incomeDate: values.incomeDate,
         label: values.label.trim(),
         amount: Number(values.amount),
         notes: values.notes ?? "",
       };
 
-      if (editingExpense) {
-        await updateDoc(doc(db, "expenses", editingExpense.id), payload);
-        toast.success("Dépense modifiée avec succès.");
-        setExpenses((prev) =>
+      if (editingIncome) {
+        await updateDoc(doc(db, "incomes", editingIncome.id), payload);
+        toast.success("Entrée modifiée avec succès.");
+        setIncomes((prev) =>
           prev.map((item) =>
-            item.id === editingExpense.id
+            item.id === editingIncome.id
               ? { ...item, ...payload, createdAt: item.createdAt }
               : item,
           ),
         );
       } else {
         const fullPayload = { ...payload, createdAt: new Date().toISOString() };
-        const docRef = await addDoc(collection(db, "expenses"), fullPayload);
-        toast.success("Dépense enregistrée avec succès.");
-        setExpenses((prev) => [{ id: docRef.id, ...fullPayload }, ...prev]);
+        const docRef = await addDoc(collection(db, "incomes"), fullPayload);
+        toast.success("Entrée enregistrée avec succès.");
+        setIncomes((prev) => [{ id: docRef.id, ...fullPayload }, ...prev]);
       }
 
-      setEditingExpense(null);
+      setEditingIncome(null);
       form.reset({
         label: "",
         amount: 0,
-        expenseDate: new Date().toISOString().slice(0, 10),
+        incomeDate: new Date().toISOString().slice(0, 10),
         notes: "",
       });
       setDialogOpen(false);
@@ -261,10 +261,10 @@ export default function DepensesPage() {
     setDeleting(true);
     try {
       const db = getDb();
-      await deleteDoc(doc(db, "expenses", deleteTarget.id));
-      toast.success("Dépense supprimée.");
-      setExpenses((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-      setDetailExpense(null);
+      await deleteDoc(doc(db, "incomes", deleteTarget.id));
+      toast.success("Entrée supprimée.");
+      setIncomes((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      setDetailIncome(null);
       setDeleteTarget(null);
     } catch (err: unknown) {
       toast.error(
@@ -278,15 +278,15 @@ export default function DepensesPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Dépenses"
-        description={`${summary.filteredCount} dépense${summary.filteredCount !== 1 ? "s" : ""} ${periodLabel}`}
+        title="Entrées"
+        description={`${summary.filteredCount} entrée${summary.filteredCount !== 1 ? "s" : ""} ${periodLabel}`}
       >
         <Button
           onClick={openCreate}
-          className="h-10 gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 font-semibold shadow-sm text-sm"
+          className="h-10 gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 font-semibold shadow-sm text-sm"
         >
           <Plus className="h-4 w-4" />
-          Nouvelle dépense
+          Nouvelle entrée
         </Button>
       </PageHeader>
 
@@ -301,7 +301,7 @@ export default function DepensesPage() {
                 className={cn(
                   "h-9 rounded-lg px-3 text-sm font-medium transition-colors",
                   activeQuickPeriod === item.value
-                    ? "bg-orange-500 text-white shadow-sm"
+                    ? "bg-emerald-500 text-white shadow-sm"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                 )}
               >
@@ -363,14 +363,14 @@ export default function DepensesPage() {
         <PrintExportButtons
           onExport={handleExport}
           exportLabel="CSV"
-          disabled={filteredExpenses.length === 0}
+          disabled={filteredIncomes.length === 0}
         />
       </div>
 
       <div className="print-only mb-4">
-        <h1 className="text-xl font-bold">Dépenses — Biso CRM</h1>
+        <h1 className="text-xl font-bold">Entrées — Biso CRM</h1>
         <p className="text-sm text-muted-foreground">
-          {summary.filteredCount} dépense{summary.filteredCount !== 1 ? "s" : ""} {periodLabel} · Total : {formatAmount(summary.totalAmount)}
+          {summary.filteredCount} entrée{summary.filteredCount !== 1 ? "s" : ""} {periodLabel} · Total : {formatAmount(summary.totalAmount)}
         </p>
       </div>
 
@@ -392,14 +392,14 @@ export default function DepensesPage() {
             <Card className="border-border/40 bg-white/80 shadow-sm backdrop-blur-sm">
               <CardContent className="p-12">
                 <EmptyState
-                  icon={Wallet}
-                  title="Aucune dépense"
+                  icon={TrendingUp}
+                  title="Aucune entrée"
                   description={
                     period === "all"
-                      ? 'Aucune dépense enregistrée. Cliquez sur "Nouvelle dépense" pour commencer.'
-                      : `Aucune dépense enregistrée ${periodLabel}. Cliquez sur "Nouvelle dépense" pour commencer.`
+                      ? 'Aucune entrée enregistrée. Cliquez sur "Nouvelle entrée" pour commencer.'
+                      : `Aucune entrée enregistrée ${periodLabel}. Cliquez sur "Nouvelle entrée" pour commencer.`
                   }
-                  actionLabel="Première dépense"
+                  actionLabel="Première entrée"
                   onAction={openCreate}
                 />
               </CardContent>
@@ -417,11 +417,11 @@ export default function DepensesPage() {
               <Card className="border-border/40 bg-white/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-orange-100 p-2.5 text-orange-700">
-                      <Wallet className="h-5 w-5" />
+                    <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+                      <TrendingUp className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Coût total</p>
+                      <p className="text-sm text-muted-foreground">Total entrées</p>
                       <p className="text-2xl font-semibold">{formatAmount(summary.totalAmount)}</p>
                     </div>
                   </div>
@@ -431,11 +431,11 @@ export default function DepensesPage() {
               <Card className="border-border/40 bg-white/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
-                      <Receipt className="h-5 w-5" />
+                    <div className="rounded-xl bg-blue-100 p-2.5 text-blue-700">
+                      <CircleDollarSign className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Nombre de dépenses</p>
+                      <p className="text-sm text-muted-foreground">Nombre d&apos;entrées</p>
                       <p className="text-2xl font-semibold">{summary.filteredCount}</p>
                     </div>
                   </div>
@@ -445,7 +445,7 @@ export default function DepensesPage() {
               <Card className="border-border/40 bg-white/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-blue-100 p-2.5 text-blue-700">
+                    <div className="rounded-xl bg-orange-100 p-2.5 text-orange-700">
                       <Layers className="h-5 w-5" />
                     </div>
                     <div>
@@ -457,34 +457,34 @@ export default function DepensesPage() {
               </Card>
             </div>
 
-            {filteredExpenses.length > 0 && (
+            {filteredIncomes.length > 0 && (
               <Card className="print-area border-border/40 bg-white/80 shadow-sm backdrop-blur-sm overflow-hidden">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <Wallet className="h-4 w-4 text-primary" />
-                    Liste des dépenses
+                    <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    Liste des entrées
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y divide-border/20">
-                    {paginatedExpenses.map((expense) => (
+                    {paginatedIncomes.map((income) => (
                       <div
-                        key={expense.id}
-                        onClick={() => setDetailExpense(expense)}
+                        key={income.id}
+                        onClick={() => setDetailIncome(income)}
                         className="flex items-center gap-3 px-5 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
                       >
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-700">
-                          <Receipt className="h-4 w-4" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                          <CircleDollarSign className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold">{expense.label}</p>
+                          <p className="text-sm font-semibold">{income.label}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {parseLocalDate(expense.expenseDate).toLocaleDateString("fr-FR")}
-                            {expense.notes ? ` · ${expense.notes}` : ""}
+                            {parseLocalDate(income.incomeDate).toLocaleDateString("fr-FR")}
+                            {income.notes ? ` · ${income.notes}` : ""}
                           </p>
                         </div>
-                        <p className="text-sm font-semibold shrink-0">
-                          {formatAmount(Number(expense.amount || 0))}
+                        <p className="text-sm font-semibold shrink-0 text-emerald-700">
+                          {formatAmount(Number(income.amount || 0))}
                         </p>
                       </div>
                     ))}
@@ -527,24 +527,24 @@ export default function DepensesPage() {
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) setEditingExpense(null);
+          if (!open) setEditingIncome(null);
         }}
       >
         <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border border-border/40 shadow-2xl bg-white">
-          <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-6 py-5 border-b border-border/30">
+          <div className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 px-6 py-5 border-b border-border/30">
             <DialogHeader className="gap-1">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-xl bg-orange-500 p-2 text-white shadow-sm shadow-orange-500/20">
-                  <Wallet className="h-5 w-5" />
+                <div className="rounded-xl bg-emerald-500 p-2 text-white shadow-sm shadow-emerald-500/20">
+                  <TrendingUp className="h-5 w-5" />
                 </div>
                 <DialogTitle className="text-lg font-bold">
-                  {editingExpense ? "Modifier la dépense" : "Nouvelle dépense"}
+                  {editingIncome ? "Modifier l'entrée" : "Nouvelle entrée"}
                 </DialogTitle>
               </div>
               <DialogDescription className="text-xs text-muted-foreground ml-10">
-                {editingExpense
-                  ? "Mettez à jour les informations de cette dépense."
-                  : "Saisissez le libellé librement, par exemple carburant, loyer ou réparation."}
+                {editingIncome
+                  ? "Mettez à jour les informations de cette entrée."
+                  : "Saisissez le libellé librement, par exemple livraison, commission ou remboursement."}
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -559,7 +559,7 @@ export default function DepensesPage() {
                     <FormLabel className="text-xs font-semibold text-foreground/80">Libellé *</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Ex. Carburant, Entretien moto..."
+                        placeholder="Ex. Livraison, Commission..."
                         className="h-10 rounded-xl border-border/50 bg-muted/10 focus-visible:bg-white transition-colors text-sm"
                         {...field}
                       />
@@ -598,7 +598,7 @@ export default function DepensesPage() {
 
                 <FormField
                   control={form.control}
-                  name="expenseDate"
+                  name="incomeDate"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-semibold text-foreground/80">Date *</FormLabel>
@@ -648,7 +648,7 @@ export default function DepensesPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl h-10 px-5 font-semibold bg-gradient-to-r from-orange-500 to-orange-600 shadow-md shadow-orange-500/10"
+                  className="rounded-xl h-10 px-5 font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-md shadow-emerald-500/10"
                 >
                   {saving ? (
                     <>
@@ -668,41 +668,41 @@ export default function DepensesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!detailExpense} onOpenChange={(open) => { if (!open) setDetailExpense(null); }}>
+      <Dialog open={!!detailIncome} onOpenChange={(open) => { if (!open) setDetailIncome(null); }}>
         <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border border-border/40 shadow-2xl bg-white">
-          {detailExpense && (
+          {detailIncome && (
             <>
-              <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 px-6 py-5 border-b border-border/30">
+              <div className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 px-6 py-5 border-b border-border/30">
                 <DialogHeader className="gap-1">
                   <div className="flex items-center gap-2.5">
-                    <div className="rounded-xl bg-orange-500 p-2 text-white shadow-sm shadow-orange-500/20">
-                      <Wallet className="h-5 w-5" />
+                    <div className="rounded-xl bg-emerald-500 p-2 text-white shadow-sm shadow-emerald-500/20">
+                      <TrendingUp className="h-5 w-5" />
                     </div>
-                    <DialogTitle className="text-lg font-bold">Détail de la dépense</DialogTitle>
+                    <DialogTitle className="text-lg font-bold">Détail de l&apos;entrée</DialogTitle>
                   </div>
                   <DialogDescription className="text-xs text-muted-foreground ml-10">
-                    {formatRecordDate(detailExpense.expenseDate)}
+                    {formatRecordDate(detailIncome.incomeDate)}
                   </DialogDescription>
                 </DialogHeader>
               </div>
               <div className="p-6 space-y-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Libellé</p>
-                  <p className="text-sm font-semibold mt-1">{detailExpense.label}</p>
+                  <p className="text-sm font-semibold mt-1">{detailIncome.label}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Montant</p>
-                  <p className="text-sm font-semibold mt-1">
-                    {formatAmount(Number(detailExpense.amount || 0))}
+                  <p className="text-sm font-semibold mt-1 text-emerald-700">
+                    {formatAmount(Number(detailIncome.amount || 0))}
                   </p>
                 </div>
-                {detailExpense.notes && (
+                {detailIncome.notes && (
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <MessageSquare className="h-3.5 w-3.5" />
                       Notes
                     </p>
-                    <p className="text-sm mt-1 text-muted-foreground">{detailExpense.notes}</p>
+                    <p className="text-sm mt-1 text-muted-foreground">{detailIncome.notes}</p>
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
@@ -710,7 +710,7 @@ export default function DepensesPage() {
                     type="button"
                     variant="outline"
                     className="rounded-xl h-10 gap-2"
-                    onClick={() => openEdit(detailExpense)}
+                    onClick={() => openEdit(detailIncome)}
                   >
                     <PencilLine className="h-4 w-4" />
                     Modifier
@@ -720,7 +720,7 @@ export default function DepensesPage() {
                       type="button"
                       variant="destructive"
                       className="rounded-xl h-10 gap-2"
-                      onClick={() => setDeleteTarget(detailExpense)}
+                      onClick={() => setDeleteTarget(detailIncome)}
                     >
                       <Trash2 className="h-4 w-4" />
                       Supprimer
@@ -736,7 +736,7 @@ export default function DepensesPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        title="Supprimer cette dépense ?"
+        title="Supprimer cette entrée ?"
         description="Cette action est définitive et ne peut pas être annulée."
         confirmLabel="Supprimer"
         variant="destructive"

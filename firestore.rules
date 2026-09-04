@@ -133,6 +133,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ─── incomes (entrées) ───────────────────────────────────────────────────
+
+    match /incomes/{docId} {
+      allow read: if isActiveStaff();
+      allow create, update: if isActiveStaff();
+      allow delete: if isAdmin();
+    }
+
     // ─── partners (partenaires) ────────────────────────────────────────────
 
     match /partners/{docId} {

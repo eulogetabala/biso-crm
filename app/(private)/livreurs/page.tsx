@@ -16,10 +16,8 @@ import {
   MapPin,
   Power,
   PowerOff,
-  Download,
-  Printer,
 } from "lucide-react";
-import { PageContainer, PageHeader, EmptyState } from "@/components/common";
+import { PageContainer, PageHeader, EmptyState, PrintExportButtons } from "@/components/common";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -58,8 +56,6 @@ export default function LivreursPage() {
     catch { toast.error("Erreur"); }
   }
 
-  function handlePrint() { window.print(); }
-
   function handleExport() {
     const data = filtered.map((l) => ({
       Nom: l.lastName, Prénom: l.firstName, Téléphone: l.phone, Adresse: l.address ?? "",
@@ -82,10 +78,7 @@ export default function LivreursPage() {
           <Input placeholder="Rechercher..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="h-11 rounded-xl border-border/50 bg-white pl-11 text-sm shadow-sm" />
           {search && <button onClick={() => { setSearch(""); setPage(0); }} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="h-4 w-4" /></button>}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint} className="h-10 gap-2 rounded-xl"><Printer className="h-4 w-4" />Imprimer</Button>
-          <Button variant="outline" size="sm" onClick={handleExport} className="h-10 gap-2 rounded-xl"><Download className="h-4 w-4" />CSV</Button>
-        </div>
+        <PrintExportButtons onExport={handleExport} exportLabel="CSV" disabled={filtered.length === 0} />
       </div>
 
       <AnimatePresence mode="wait">

@@ -26,6 +26,9 @@ export const ROUTES = {
     depenses: {
       list: "/depenses",
     },
+    entrees: {
+      list: "/entrees",
+    },
     stock: {
       list: "/stock",
       new: "/stock/new",

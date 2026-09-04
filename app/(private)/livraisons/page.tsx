@@ -24,7 +24,7 @@ import {
   Eye,
   Phone,
 } from "lucide-react";
-import { PageContainer, PageHeader, EmptyState } from "@/components/common";
+import { PageContainer, PageHeader, EmptyState, PrintExportButtons } from "@/components/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,7 @@ import { deliverySchema, type DeliveryFormValues } from "@/src/schemas";
 import type { Client } from "@/src/types";
 import { toast } from "sonner";
 import { PAGINATION } from "@/src/constants";
+import { downloadCSV } from "@/src/utils";
 import { cn } from "@/lib/utils";
 
 interface Delivery {
@@ -325,6 +326,28 @@ export default function LivraisonsPage() {
   const paginatedDeliveries = filteredDeliveries.slice(page * pageSize, (page + 1) * pageSize);
   const totalPages = Math.ceil(filteredDeliveries.length / pageSize);
 
+  const handleExport = () => {
+    if (filteredDeliveries.length === 0) {
+      toast.error("Aucune livraison à exporter.");
+      return;
+    }
+    downloadCSV(
+      filteredDeliveries.map((delivery) => {
+        const client = clients.find((item) => item.id === delivery.clientId);
+        const clientName = client ? `${client.firstName} ${client.lastName}` : "Client inconnu";
+        return {
+          Date: parseDeliveryDate(delivery.deliveryDate).toLocaleDateString("fr-FR"),
+          Client: clientName,
+          Colis: delivery.packageName,
+          Quantité: delivery.quantity,
+          Adresse: delivery.address,
+          Notes: delivery.notes,
+        };
+      }),
+      `livraisons-biso-${period}`,
+    );
+  };
+
   // Debounced client search
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -501,7 +524,7 @@ export default function LivraisonsPage() {
       </PageHeader>
 
       {/* Period selector + Search */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="no-print flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <div className="flex flex-wrap items-center rounded-xl border border-border/50 bg-white p-1 shadow-sm">
             {QUICK_PERIODS.map((item) => (
@@ -571,6 +594,11 @@ export default function LivraisonsPage() {
             </button>
           )}
         </div>
+        <PrintExportButtons
+          onExport={handleExport}
+          exportLabel="CSV"
+          disabled={filteredDeliveries.length === 0}
+        />
       </div>
 
       <AnimatePresence mode="wait">

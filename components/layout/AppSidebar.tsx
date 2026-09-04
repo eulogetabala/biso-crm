@@ -37,6 +37,7 @@ const mainItems: NavItem[] = [
   { label: "Livreurs", href: ROUTES.private.livreurs.list, icon: Bike },
   { label: "Partenaires", href: ROUTES.private.partenaires.list, icon: Handshake },
   { label: "Livraisons", href: ROUTES.private.livraisons.list, icon: Truck },
+  { label: "Entrées", href: ROUTES.private.entrees.list, icon: TrendingUp },
   { label: "Dépenses", href: ROUTES.private.depenses.list, icon: Wallet },
   { label: "Stock", href: ROUTES.private.stock.list, icon: Package },
 ];
@@ -49,6 +50,7 @@ const adminItems: NavItem[] = [
 interface AppSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobile?: boolean;
 }
 
 function NavLink({ item, collapsed, isActive }: { item: NavItem; collapsed: boolean; isActive: boolean }) {
@@ -69,7 +71,7 @@ function NavLink({ item, collapsed, isActive }: { item: NavItem; collapsed: bool
   );
 }
 
-export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, mobile = false }: AppSidebarProps) {
   const pathname = usePathname();
   const { role, logOut } = useAuth();
 
@@ -80,13 +82,15 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     <aside
       className={cn(
         "flex h-full flex-col bg-gradient-to-b from-orange-600 to-orange-700 transition-all duration-300",
-        collapsed ? "w-[68px]" : "w-[260px]"
+        collapsed ? "w-[68px]" : "w-[260px]",
+        mobile && "pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
       )}
     >
       <div
         className={cn(
-          "flex h-[60px] items-center border-b border-orange-500/30 px-3",
-          collapsed ? "justify-center" : "justify-between"
+          "flex items-center border-b border-orange-500/30 px-3",
+          mobile ? "min-h-[68px] px-4 py-4" : "h-[60px]",
+          collapsed ? "justify-center" : "justify-between",
         )}
       >
         {!collapsed && (
@@ -111,8 +115,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="flex flex-col gap-1">
+      <ScrollArea className={cn("flex-1 px-3", mobile ? "py-5" : "py-4")}>
+        <nav className={cn("flex flex-col", mobile ? "gap-2" : "gap-1")}>
           <div className="mb-2">
             {!collapsed && (
               <span className="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-orange-300/60">
@@ -131,7 +135,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
 
           {role === "admin" && (
             <>
-              <div className="mb-2 mt-5">
+              <div className={cn("mb-2", mobile ? "mt-6" : "mt-5")}>
                 {!collapsed && (
                   <span className="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-orange-300/60">
                     Administration
@@ -149,7 +153,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
             </>
           )}
 
-          <div className="mb-2 mt-5">
+          <div className={cn("mb-2", mobile ? "mt-6" : "mt-5")}>
             {!collapsed && (
               <span className="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-orange-300/60">
                 Compte
@@ -164,7 +168,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         </nav>
       </ScrollArea>
 
-      <div className="border-t border-orange-500/30 p-3">
+      <div className={cn("border-t border-orange-500/30", mobile ? "p-4 pb-6" : "p-3")}>
         <button
           onClick={logOut}
           className={cn(
